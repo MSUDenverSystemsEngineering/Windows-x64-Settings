@@ -53,6 +53,7 @@ Param (
 	[switch]$DisableWindowsConsumerFeatures = $false,
 	[switch]$EnableLoginLegalNotice = $false,
 	[switch]$EnableStartMenuLogoffButton = $false,
+	[switch]$EnableVPN = $false,
 	[switch]$EnableSupportInformation = $false
 )
 
@@ -124,7 +125,7 @@ Try {
 
 		## <Perform Pre-Installation tasks here>
 			#  Verify that settings were specified on the command-line
-			If ((-not $DisableUAC) -and (-not $DisableDisplayingPreviousUsernames) -and (-not $DisableWindowsConsumerFeatures) -and (-not $EnableInternetExplorerAcademicSettings) -and (-not $EnableInternetExplorerFacultyStaffSettings) -and (-not $EnableLoginLegalNotice) -and (-not $EnableStartMenuLogoffButton) -and (-not $EnableSupportInformation)) {
+			If ((-not $DisableUAC) -and (-not $DisableDisplayingPreviousUsernames) -and (-not $DisableWindowsConsumerFeatures) -and (-not $EnableInternetExplorerAcademicSettings) -and (-not $EnableInternetExplorerFacultyStaffSettings) -and (-not $EnableLoginLegalNotice) -and (-not $EnableStartMenuLogoffButton) -and (-not $EnableSupportInformation) -and (-not $EnableVPN)) {
 				Show-InstallationPrompt -Message 'No settings were specified' -ButtonRightText 'OK' -Icon 'Error'
 				Exit-Script -ExitCode 9
 			}
@@ -208,6 +209,9 @@ Try {
 			}
 		}
 
+		If ($EnableVPN) {
+			Copy-File -Path "$dirFiles\rasphone.pbk" -Destination "%ProgramData%\Microsoft\Network\Connections\Pbk"
+		}
 
 		##*===============================================
 		##* POST-INSTALLATION
