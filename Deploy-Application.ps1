@@ -210,7 +210,7 @@ Try {
 		}
 
 		If ($EnableVPN) {
-			Copy-File -Path "$dirFiles\rasphone.pbk" -Destination "%ProgramData%\Microsoft\Network\Connections\Pbk"
+			Copy-File -Path "$dirFiles\rasphone.pbk" -Destination "C:\ProgramData\Microsoft\Network\Connections\Pbk"
 		}
 
 		##*===============================================
