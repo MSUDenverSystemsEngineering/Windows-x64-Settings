@@ -46,15 +46,26 @@ Param (
 	[switch]$TerminalServerMode = $false,
 	[Parameter(Mandatory=$false)]
 	[switch]$DisableLogging = $false,
+	[Parameter(Mandatory=$false)]
 	[switch]$DisableUAC = $false,
+	[Parameter(Mandatory=$false)]
 	[switch]$DisableDisplayingPreviousUsernames = $false,
+	[Parameter(Mandatory=$false)]
 	[switch]$EnableInternetExplorerAcademicSettings = $false,
+	[Parameter(Mandatory=$false)]
 	[switch]$EnableInternetExplorerFacultyStaffSettings = $false,
+	[Parameter(Mandatory=$false)]
 	[switch]$DisableWindowsConsumerFeatures = $false,
+	[Parameter(Mandatory=$false)]
 	[switch]$EnableLoginLegalNotice = $false,
+	[Parameter(Mandatory=$false)]
 	[switch]$EnableStartMenuLogoffButton = $false,
+	[Parameter(Mandatory=$false)]
 	[switch]$EnableVPN = $false,
-	[switch]$EnableSupportInformation = $false
+	[Parameter(Mandatory=$false)]
+	[switch]$EnableSupportInformation = $false,
+	[Parameter(Mandatory=$false)]
+	[switch]$EnableLegacyDataRestore = $false
 )
 
 Try {
@@ -125,7 +136,7 @@ Try {
 
 		## <Perform Pre-Installation tasks here>
 			#  Verify that settings were specified on the command-line
-			If ((-not $DisableUAC) -and (-not $DisableDisplayingPreviousUsernames) -and (-not $DisableWindowsConsumerFeatures) -and (-not $EnableInternetExplorerAcademicSettings) -and (-not $EnableInternetExplorerFacultyStaffSettings) -and (-not $EnableLoginLegalNotice) -and (-not $EnableStartMenuLogoffButton) -and (-not $EnableSupportInformation) -and (-not $EnableVPN)) {
+			If ((-not $DisableUAC) -and (-not $DisableDisplayingPreviousUsernames) -and (-not $DisableWindowsConsumerFeatures) -and (-not $EnableInternetExplorerAcademicSettings) -and (-not $EnableInternetExplorerFacultyStaffSettings) -and (-not $EnableLoginLegalNotice) -and (-not $EnableStartMenuLogoffButton) -and (-not $EnableSupportInformation) -and (-not $EnableVPN) -and (-not $EnableLegacyDataRestore)) {
 				Show-InstallationPrompt -Message 'No settings were specified' -ButtonRightText 'OK' -Icon 'Error'
 				Exit-Script -ExitCode 9
 			}
@@ -213,6 +224,18 @@ Try {
 			Copy-File -Path "$dirFiles\rasphone.pbk" -Destination "C:\ProgramData\Microsoft\Network\Connections\Pbk"
 		}
 
+		If ($EnableLegacyDataRestore) {
+			Write-Log -Message "Creating directory structure for data restoration" -Severity 1 -Source $deployAppScriptFriendlyName
+			New-Folder -Path "${envSystemDrive}\Data"
+			New-Folder -Path "${envSystemDrive}\MSUDenver"
+			Copy-File -Path "${dirFiles}\DataTransfer.cmd" -Destination "${envSystemDrive}\MSUDenver"
+			[scriptblock]$RunOnce = {
+				Write-Log -Message "Setting data transfer to run once on logon..." -Severity 1 -Source $deployAppScriptFriendlyName
+				Set-RegistryKey -Key "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -Name "DataRestore" -Value "${envSystemDrive}\MSUDenver\DataTransfer.cmd" -Type "String" -SID $UserProfile.SID
+			}
+			Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $RunOnce
+		}
+
 		##*===============================================
 		##* POST-INSTALLATION
 		##*===============================================
@@ -278,8 +301,8 @@ Catch {
 # SIG # Begin signature block
 # MIIU4wYJKoZIhvcNAQcCoIIU1DCCFNACAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBnJaZtozEZwrpI
-# gjH+MHXTVR5gLAhsLtQquYDchJaxoaCCD4cwggQUMIIC/KADAgECAgsEAAAAAAEv
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCCc32wVq+RSbFPr
+# z8Z+gnsAR+1zRIYsyt0b7A0cBcfVF6CCD4cwggQUMIIC/KADAgECAgsEAAAAAAEv
 # TuFS1zANBgkqhkiG9w0BAQUFADBXMQswCQYDVQQGEwJCRTEZMBcGA1UEChMQR2xv
 # YmFsU2lnbiBudi1zYTEQMA4GA1UECxMHUm9vdCBDQTEbMBkGA1UEAxMSR2xvYmFs
 # U2lnbiBSb290IENBMB4XDTExMDQxMzEwMDAwMFoXDTI4MDEyODEyMDAwMFowUjEL
@@ -366,26 +389,26 @@ Catch {
 # FgNlZHUxGTAXBgoJkiaJk/IsZAEZFgltc3VkZW52ZXIxFTATBgoJkiaJk/IsZAEZ
 # FgV3aW5hZDEZMBcGA1UEAxMQd2luYWQtVk1XQ0EwMS1DQQITfwAAACITuo77mvOv
 # 9AABAAAAIjANBglghkgBZQMEAgEFAKBmMBgGCisGAQQBgjcCAQwxCjAIoAKAAKEC
-# gAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwLwYJKoZIhvcNAQkEMSIEIFiJ
-# OTe7gvH4moWoH2gAdhQTK57WljwQ1MS/XEMuT4MNMA0GCSqGSIb3DQEBAQUABIIB
-# AIElKlNkOzswvFZjP3xlL6h7Qe4QwztFMEWGL3oTfH1b8fSefOjCyuUvRBZGwDvp
-# GC7jo+BvXDo7Hk3BjAlSlEoTeRz7E8g8HLkQT8cHJmxOep1e/1f6diHg3XH+byLg
-# Qeyw6lmR/o1s0EA9UpwNc/dEPmKKg0Ep1+ec0hCJX2OobZS2DNkxn9xxurSrfYXf
-# TPKgLmsb3LW8LTo+LmStTbtF4es5HJRSMfFQX2THzw4QHgfrekLqsjex8cIgZ7GX
-# LPJKCheqCGn61Q4UwfnaTaCUOPKFCxT3I5J7PwIpht04NpTYFYPgaEdCj94bKSi0
-# epfTYk5t8kKwwD1xLLBChkKhggKiMIICngYJKoZIhvcNAQkGMYICjzCCAosCAQEw
+# gAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwLwYJKoZIhvcNAQkEMSIEIFW1
+# hgVOtFyUNL5cMVJJEWIt4hL642Mv7UQlv93pOpX8MA0GCSqGSIb3DQEBAQUABIIB
+# AGnXMUt6rLonOkO1DsCf349zuEzWa+1RVmWvDo7VofoaXdr5U6oUlo32m3g4aazu
+# SQyn3SXrXry61+Q3N0Afe2HGlL1+kZI8Al+xCCRMMpZ9acW6Pmzb4t90f/yNNljK
+# 6AoAVXRo6O1RhoJGx6ZsJonZzqLzF72/hFGZHtTC5+5BnyhTSH+bhNtrnGQc64zh
+# /wkMFiFoUi32+no8B/S6jqptw3qbCp3YWDYI38Q+r1+N996i6RudQmglSXbzgC/5
+# nlKmGgNs1fADI6bjc9V67gymfhskSJD2EwQumfVjrwT0Uj+6AnbC2KPz6EpQFRLu
+# 8AY2HnObo+ZExnr+30IzJl+hggKiMIICngYJKoZIhvcNAQkGMYICjzCCAosCAQEw
 # aDBSMQswCQYDVQQGEwJCRTEZMBcGA1UEChMQR2xvYmFsU2lnbiBudi1zYTEoMCYG
 # A1UEAxMfR2xvYmFsU2lnbiBUaW1lc3RhbXBpbmcgQ0EgLSBHMgISESHWmadklz7x
 # +EJ+6RnMU0EUMAkGBSsOAwIaBQCggf0wGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEH
-# ATAcBgkqhkiG9w0BCQUxDxcNMTcwMzE3MTUwMDQ3WjAjBgkqhkiG9w0BCQQxFgQU
-# y+F1AOzTXK/Psm3AGp9NIKfXu6MwgZ0GCyqGSIb3DQEJEAIMMYGNMIGKMIGHMIGE
+# ATAcBgkqhkiG9w0BCQUxDxcNMTcwNjAxMjIwMDU3WjAjBgkqhkiG9w0BCQQxFgQU
+# 2Rm9ld7gH8yZ3QXDq9vOO2D024UwgZ0GCyqGSIb3DQEJEAIMMYGNMIGKMIGHMIGE
 # BBRjuC+rYfWDkJaVBQsAJJxQKTPseTBsMFakVDBSMQswCQYDVQQGEwJCRTEZMBcG
 # A1UEChMQR2xvYmFsU2lnbiBudi1zYTEoMCYGA1UEAxMfR2xvYmFsU2lnbiBUaW1l
 # c3RhbXBpbmcgQ0EgLSBHMgISESHWmadklz7x+EJ+6RnMU0EUMA0GCSqGSIb3DQEB
-# AQUABIIBAIpHcMF4rBs5Z5bokzmVkjgY/N2nPwOZRAiMnuIf91tI4FPTIcj6xf8j
-# K5uQZYKbMPnKduT+MVKeixpthiluAk3sr10dyCrOa4FNM/vVG+8VyDkbkFwzDFGv
-# riTO2dZfC2a0jqUgctGd1jRe3/3Ohs0MhjLbAZ4esHtgbegrwd68nAlENhIYVWyV
-# yy4yT0PQnIayOFAdPg6TBmT1C/R2K9STAGE/PuLPax7+bWYHqWZF3BykRhX/hb5N
-# sBbgqM1zEszqqGtO7UgwxiSnL0/2OqBxA1Mm4hNCYRCGLOpxmluV9v8kVkXLrOpF
-# c7CpmkjnW2LMlN07z/6m5yrUfRSQl3k=
+# AQUABIIBAJmpXqlkKzJ7ouyl3FzCZ8vWlYm45vnv8J0E772ce3cFfsYsD8Op+/UN
+# XjOa10cfKh3oKP8Ycly9Is55+Yb6yqdzuDSmqFVDeiAdjmutjQg5k9ymMLK9fk32
+# iZKB3KM9XXgf4I/WVl2u+T6dhB0I8yC+iaTTb2GgmKFvhTg/PYBhepRaO17j91Ot
+# C17RWKJyQ2/+vkx4NaZyKAu8vCmUl3GqoAEQIB7bb99CNQD9455RAecn8+p5cCpN
+# 8P4R3arxiqVxucI4/tyB43T7PEvw8cTBH8P1dSglR6o1RDGvsZQSzOrZkeVPMaJ9
+# gC8LeRsds67IrmFcwBq4lo1K3VvCbCI=
 # SIG # End signature block
