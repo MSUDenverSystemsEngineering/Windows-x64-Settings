@@ -227,11 +227,11 @@ Try {
 		If ($EnableLegacyDataRestore) {
 			Write-Log -Message "Creating directory structure for data restoration" -Severity 1 -Source $deployAppScriptFriendlyName
 			New-Folder -Path "${envSystemDrive}\Data"
-			New-Folder -Path "${envSystemDrive}\MSUDenver"
-			Copy-File -Path "${dirFiles}\DataTransfer.cmd" -Destination "${envSystemDrive}\MSUDenver"
+			New-Folder -Path "${envSystemRoot}\MSUDenver"
+			Copy-File -Path "${dirFiles}\DataTransfer.cmd" -Destination "${envSystemRoot}\MSUDenver"
 			[scriptblock]$RunOnce = {
 				Write-Log -Message "Setting data transfer to run once on logon..." -Severity 1 -Source $deployAppScriptFriendlyName
-				Set-RegistryKey -Key "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -Name "DataRestore" -Value "${envSystemDrive}\MSUDenver\DataTransfer.cmd" -Type "String" -SID $UserProfile.SID
+				Set-RegistryKey -Key "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -Name "DataRestore" -Value "${envSystemRoot}\MSUDenver\DataTransfer.cmd" -Type "String" -SID $UserProfile.SID
 			}
 			Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $RunOnce
 		}
@@ -301,8 +301,8 @@ Catch {
 # SIG # Begin signature block
 # MIIU4wYJKoZIhvcNAQcCoIIU1DCCFNACAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCCc32wVq+RSbFPr
-# z8Z+gnsAR+1zRIYsyt0b7A0cBcfVF6CCD4cwggQUMIIC/KADAgECAgsEAAAAAAEv
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBceFjs73J9r2i0
+# KIOHHhM8ekbO04lJXGz80zNMe6CgH6CCD4cwggQUMIIC/KADAgECAgsEAAAAAAEv
 # TuFS1zANBgkqhkiG9w0BAQUFADBXMQswCQYDVQQGEwJCRTEZMBcGA1UEChMQR2xv
 # YmFsU2lnbiBudi1zYTEQMA4GA1UECxMHUm9vdCBDQTEbMBkGA1UEAxMSR2xvYmFs
 # U2lnbiBSb290IENBMB4XDTExMDQxMzEwMDAwMFoXDTI4MDEyODEyMDAwMFowUjEL
@@ -389,26 +389,26 @@ Catch {
 # FgNlZHUxGTAXBgoJkiaJk/IsZAEZFgltc3VkZW52ZXIxFTATBgoJkiaJk/IsZAEZ
 # FgV3aW5hZDEZMBcGA1UEAxMQd2luYWQtVk1XQ0EwMS1DQQITfwAAACITuo77mvOv
 # 9AABAAAAIjANBglghkgBZQMEAgEFAKBmMBgGCisGAQQBgjcCAQwxCjAIoAKAAKEC
-# gAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwLwYJKoZIhvcNAQkEMSIEIFW1
-# hgVOtFyUNL5cMVJJEWIt4hL642Mv7UQlv93pOpX8MA0GCSqGSIb3DQEBAQUABIIB
-# AGnXMUt6rLonOkO1DsCf349zuEzWa+1RVmWvDo7VofoaXdr5U6oUlo32m3g4aazu
-# SQyn3SXrXry61+Q3N0Afe2HGlL1+kZI8Al+xCCRMMpZ9acW6Pmzb4t90f/yNNljK
-# 6AoAVXRo6O1RhoJGx6ZsJonZzqLzF72/hFGZHtTC5+5BnyhTSH+bhNtrnGQc64zh
-# /wkMFiFoUi32+no8B/S6jqptw3qbCp3YWDYI38Q+r1+N996i6RudQmglSXbzgC/5
-# nlKmGgNs1fADI6bjc9V67gymfhskSJD2EwQumfVjrwT0Uj+6AnbC2KPz6EpQFRLu
-# 8AY2HnObo+ZExnr+30IzJl+hggKiMIICngYJKoZIhvcNAQkGMYICjzCCAosCAQEw
+# gAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwLwYJKoZIhvcNAQkEMSIEIFdd
+# 7rpvGNsGxHDPSHccOMOr4X3ikIIebBrTBEQbbDZNMA0GCSqGSIb3DQEBAQUABIIB
+# AJxdC93ZibeLM+QFHTRoesQvLrYZ8l5DCrdKj99QFf4dKOShtiOdTq0zZjF/UwNM
+# fWHZsE/uCQhvu+OucjPPa0bcusCVuUcwIPnGgwx5qgpuIWrDUAGBud+dUKZiXazp
+# INkznAfbWW0q4pku8HICVjVyk26gFws508cxp7Lgp30otEoa6xLNvlSe5nvbPGqI
+# UeT+wjiEQyn9UWglBc/jbEsZC6jUPF3oD0nu4V+2OEmAty0Y4NB8fnPPeOEWs5KR
+# GuEtoONEi3OufRbrt1SihEcB72l8JmjGefU490oZxwxX9b7FSlWg1L6/XFxB2d5k
+# o8DI2A8FyNKOoTLeAFlIMLyhggKiMIICngYJKoZIhvcNAQkGMYICjzCCAosCAQEw
 # aDBSMQswCQYDVQQGEwJCRTEZMBcGA1UEChMQR2xvYmFsU2lnbiBudi1zYTEoMCYG
 # A1UEAxMfR2xvYmFsU2lnbiBUaW1lc3RhbXBpbmcgQ0EgLSBHMgISESHWmadklz7x
 # +EJ+6RnMU0EUMAkGBSsOAwIaBQCggf0wGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEH
-# ATAcBgkqhkiG9w0BCQUxDxcNMTcwNjAxMjIwMDU3WjAjBgkqhkiG9w0BCQQxFgQU
-# 2Rm9ld7gH8yZ3QXDq9vOO2D024UwgZ0GCyqGSIb3DQEJEAIMMYGNMIGKMIGHMIGE
+# ATAcBgkqhkiG9w0BCQUxDxcNMTcwNjAxMjIwNDI4WjAjBgkqhkiG9w0BCQQxFgQU
+# J8gS6Y8gr3khN/OURa2epjdgdpwwgZ0GCyqGSIb3DQEJEAIMMYGNMIGKMIGHMIGE
 # BBRjuC+rYfWDkJaVBQsAJJxQKTPseTBsMFakVDBSMQswCQYDVQQGEwJCRTEZMBcG
 # A1UEChMQR2xvYmFsU2lnbiBudi1zYTEoMCYGA1UEAxMfR2xvYmFsU2lnbiBUaW1l
 # c3RhbXBpbmcgQ0EgLSBHMgISESHWmadklz7x+EJ+6RnMU0EUMA0GCSqGSIb3DQEB
-# AQUABIIBAJmpXqlkKzJ7ouyl3FzCZ8vWlYm45vnv8J0E772ce3cFfsYsD8Op+/UN
-# XjOa10cfKh3oKP8Ycly9Is55+Yb6yqdzuDSmqFVDeiAdjmutjQg5k9ymMLK9fk32
-# iZKB3KM9XXgf4I/WVl2u+T6dhB0I8yC+iaTTb2GgmKFvhTg/PYBhepRaO17j91Ot
-# C17RWKJyQ2/+vkx4NaZyKAu8vCmUl3GqoAEQIB7bb99CNQD9455RAecn8+p5cCpN
-# 8P4R3arxiqVxucI4/tyB43T7PEvw8cTBH8P1dSglR6o1RDGvsZQSzOrZkeVPMaJ9
-# gC8LeRsds67IrmFcwBq4lo1K3VvCbCI=
+# AQUABIIBAFZqbTeB7Min/tKjKMFkBexSfUqKeMIQejIRr8mbVZjIaaKbsEiqI8KY
+# wVq4DxCKqhDfCyU+o2IxCYQq2guEoRLWTRunAmJT02gvWCE0V8zk+AZ0CcbA+iPx
+# ov+P/bGVnldWqvsW4U9IpeqeKRUIbg9OJA7oRtxFGcDXrfa8Nvab2QZ7FaEVxCA/
+# Ykai7kz5rbnIsBWBWS4pKAPAKR9a/fWZFJdEG61A6kum0tgvF8xJdzYUidrPqnx4
+# AfzYcGXXrLvDgi8kRsZcjgHn0zcyiC+t5FRkmpFHYT4AMnYHBv4ksaGJNjOxizCT
+# yN1U7IQIG3VuKkBKzoGV2BNfD6Q2nXQ=
 # SIG # End signature block
