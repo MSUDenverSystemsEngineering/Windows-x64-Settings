@@ -65,12 +65,14 @@ Param (
 	[Parameter(Mandatory=$false)]
 	[switch]$EnableSupportInformation = $false,
 	[Parameter(Mandatory=$false)]
-	[switch]$EnableLegacyDataRestore = $false
+	[switch]$EnableLegacyDataRestore = $false,
+	[Parameter(Mandatory=$false)]
+	[switch]$EnablePowerSettings = $false
 )
 
 Try {
 	## Set the script execution policy for this process
-	Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force -ErrorAction 'Stop' } Catch {}
+	Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force -ErrorAction 'Stop' } Catch { Write-Error -Message "Unable to set the PowerShell Execution Policy to Bypass for this process." }
 
 	##*===============================================
 	##* VARIABLE DECLARATION
@@ -78,13 +80,13 @@ Try {
 	## Variables: Application
 	[string]$appVendor = 'MSU Denver'
 	[string]$appName = 'Windows Settings'
-	[string]$appVersion = '1.0.0'
+	[string]$appVersion = '2.0.0'
 	[string]$appArch = 'x64'
 	[string]$appLang = 'EN'
 	[string]$appRevision = '01'
 	[string]$appScriptVersion = '1.0.0'
-	[string]$appScriptDate = '03/15/2017'
-	[string]$appScriptAuthor = 'MSU Denver'
+	[string]$appScriptDate = '06/01/2017'
+	[string]$appScriptAuthor = 'Jordan Hamilton/Quan Tran'
 	##*===============================================
 	## Variables: Install Titles (Only set here to override defaults set by the toolkit)
 	[string]$installName = ''
@@ -136,12 +138,17 @@ Try {
 
 		## <Perform Pre-Installation tasks here>
 			#  Verify that settings were specified on the command-line
-			If ((-not $DisableUAC) -and (-not $DisableDisplayingPreviousUsernames) -and (-not $DisableWindowsConsumerFeatures) -and (-not $EnableInternetExplorerAcademicSettings) -and (-not $EnableInternetExplorerFacultyStaffSettings) -and (-not $EnableLoginLegalNotice) -and (-not $EnableStartMenuLogoffButton) -and (-not $EnableSupportInformation) -and (-not $EnableVPN) -and (-not $EnableLegacyDataRestore)) {
+			If ((-not $DisableUAC) -and (-not $DisableDisplayingPreviousUsernames) -and (-not $DisableWindowsConsumerFeatures) -and (-not $EnableInternetExplorerAcademicSettings) -and (-not $EnableInternetExplorerFacultyStaffSettings) -and (-not $EnableLoginLegalNotice) -and (-not $EnableStartMenuLogoffButton) -and (-not $EnableSupportInformation) -and (-not $EnableVPN) -and (-not $EnableLegacyDataRestore) -and (-not $EnablePowerSettings)) {
 				Show-InstallationPrompt -Message 'No settings were specified' -ButtonRightText 'OK' -Icon 'Error'
 				Exit-Script -ExitCode 9
 			}
 			## Enumerate allowed sites for Internet Explorer
 			$AllowedSites = @("*.ahec.edu","*.mathxl.com","*.pearsoncmg.com","*.kaltura.com","*.ecollege.com","*.msudenver.edu","*.myitlab.com","*.wimba.com","*.auraria.edu","*.accuplacer.org","*.college-assist.org","*.pearsonmylabandmastering.com","*.coursecompass.com","*.readingplus.com","*.blackboard.com","*.pearsoned.com")
+			$DisableDisplayingPreviousUsernamesKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+			$DisableUACKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+			$EnableLoginLegalNoticeKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+			$EnableStartMenuLogoffButtonKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer"
+			$EnableSupportInformationKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation"
 
 		##*===============================================
 		##* INSTALLATION
@@ -156,12 +163,10 @@ Try {
 
 		## <Perform Installation tasks here>
 		If ($DisableUAC) {
-			$DisableUACKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
 			Set-RegistryKey -Key $DisableUACKey -Name "EnableLUA" -Value "0" -Type "DWord"
 			$mainExitCode = 3010
 		}
 		If ($DisableDisplayingPreviousUsernames) {
-			$DisableDisplayingPreviousUsernamesKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
 			Set-RegistryKey -Key $DisableDisplayingPreviousUsernamesKey -Name "dontdisplaylastusername" -Value "1" -Type "DWord"
 		}
 		If ($DisableWindowsConsumerFeatures) {
@@ -194,20 +199,17 @@ Try {
 			Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $HKCUFacultyStaffRegistrySettings
 		}
 		If ($EnableLoginLegalNotice) {
-			$EnableLoginLegalNoticeKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
 			Set-RegistryKey -Key $EnableLoginLegalNoticeKey -Name "legalnoticecaption" -Value "Metropolitan State University of Denver" -Type "String"
 			Set-RegistryKey -Key $EnableLoginLegalNoticeKey -Name "legalnoticetext" -Value "This workstation is managed by MSU Denver Information Technology Services. By successfully logging into Metropolitan State University of Denver's System, you are agreeing to both the letter and spirit of the MSU Denver Information Security Appropriate Use Policy. Access to this system is restricted to authorized users only. Unauthorized access to this system or misuse of its information may result in disciplinary action including termination of employee and/or student status. Such conduct may also violate criminal laws, which carry severe penalties and are vigorously prosecuted. Information Technology Services routinely monitors system logs and network activity." -Type "String"
 		}
 		If ($EnableStartMenuLogoffButton) {
-			$EnableStartMenuLogoffButtonKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer"
 			Set-RegistryKey -Key $EnableStartMenuLogoffButtonKey -Name "PowerButtonAction" -Value "1" -Type "DWord"
 		}
 		If ($EnableSupportInformation) {
-			$EnableSupportInformationKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation"
 			Copy-File -Path "$dirFiles\OEMLogo.bmp" -Destination "$envWinDir" -ContinueOnError $true
 			Set-RegistryKey -Key $EnableSupportInformationKey -Name "Logo" -Value "$envWinDir\OEMLogo.bmp" -Type "String"
 			Set-RegistryKey -Key $EnableSupportInformationKey -Name "Manufacturer" -Value "Metropolitan State University of Denver" -Type "String"
-			Set-RegistryKey -Key $EnableSupportInformationKey -Name "SupportHours" -Value "Monday - Friday, 8am - 5pm | Visit Admin 475 or West 241" -Type "String"
+			Set-RegistryKey -Key $EnableSupportInformationKey -Name "SupportHours" -Value "Monday - Friday, 8am - 5pm | Visit Admin 475 or West 243" -Type "String"
 			Set-RegistryKey -Key $EnableSupportInformationKey -Name "SupportURL" -Value "http://msudenver.edu/technology" -Type "String"
 			Set-RegistryKey -Key $EnableSupportInformationKey -Name "SupportPhone" -Value "303-352-7548 | 24/7 Phone Support" -Type "String"
 			Write-Log -Message "Adding Support Information for ${envOSName} (${envOSVersionMajor}.$envOSVersionMinor)" -Severity 1 -Source $deployAppScriptFriendlyName
@@ -221,7 +223,7 @@ Try {
 		}
 
 		If ($EnableVPN) {
-			Copy-File -Path "$dirFiles\rasphone.pbk" -Destination "C:\ProgramData\Microsoft\Network\Connections\Pbk"
+			Copy-File -Path "$dirFiles\rasphone.pbk" -Destination "$envProgramData\Microsoft\Network\Connections\Pbk"
 		}
 
 		If ($EnableLegacyDataRestore) {
@@ -234,6 +236,12 @@ Try {
 				Set-RegistryKey -Key "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -Name "DataRestore" -Value "${envSystemRoot}\MSUDenver\DataTransfer.cmd" -Type "String" -SID $UserProfile.SID
 			}
 			Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $RunOnce
+		}
+
+		If ($EnablePowerSettings) {
+			$exitCode = Execute-Process -Path "$envSystem32Directory\powercfg.exe" -Parameters "/CHANGE standby-timeout-ac 0" -WindowStyle "Hidden" -PassThru
+			If ($exitCode.ExitCode -ne "0") {
+				$mainExitCode = $exitCode.ExitCode
 		}
 
 		##*===============================================
@@ -301,8 +309,8 @@ Catch {
 # SIG # Begin signature block
 # MIIU4wYJKoZIhvcNAQcCoIIU1DCCFNACAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBceFjs73J9r2i0
-# KIOHHhM8ekbO04lJXGz80zNMe6CgH6CCD4cwggQUMIIC/KADAgECAgsEAAAAAAEv
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCCY4t1URzI2HWFj
+# FeRw//xQcpd1AJ3aJvamTm0Vi4Hc7qCCD4cwggQUMIIC/KADAgECAgsEAAAAAAEv
 # TuFS1zANBgkqhkiG9w0BAQUFADBXMQswCQYDVQQGEwJCRTEZMBcGA1UEChMQR2xv
 # YmFsU2lnbiBudi1zYTEQMA4GA1UECxMHUm9vdCBDQTEbMBkGA1UEAxMSR2xvYmFs
 # U2lnbiBSb290IENBMB4XDTExMDQxMzEwMDAwMFoXDTI4MDEyODEyMDAwMFowUjEL
@@ -389,26 +397,26 @@ Catch {
 # FgNlZHUxGTAXBgoJkiaJk/IsZAEZFgltc3VkZW52ZXIxFTATBgoJkiaJk/IsZAEZ
 # FgV3aW5hZDEZMBcGA1UEAxMQd2luYWQtVk1XQ0EwMS1DQQITfwAAACITuo77mvOv
 # 9AABAAAAIjANBglghkgBZQMEAgEFAKBmMBgGCisGAQQBgjcCAQwxCjAIoAKAAKEC
-# gAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwLwYJKoZIhvcNAQkEMSIEIFdd
-# 7rpvGNsGxHDPSHccOMOr4X3ikIIebBrTBEQbbDZNMA0GCSqGSIb3DQEBAQUABIIB
-# AJxdC93ZibeLM+QFHTRoesQvLrYZ8l5DCrdKj99QFf4dKOShtiOdTq0zZjF/UwNM
-# fWHZsE/uCQhvu+OucjPPa0bcusCVuUcwIPnGgwx5qgpuIWrDUAGBud+dUKZiXazp
-# INkznAfbWW0q4pku8HICVjVyk26gFws508cxp7Lgp30otEoa6xLNvlSe5nvbPGqI
-# UeT+wjiEQyn9UWglBc/jbEsZC6jUPF3oD0nu4V+2OEmAty0Y4NB8fnPPeOEWs5KR
-# GuEtoONEi3OufRbrt1SihEcB72l8JmjGefU490oZxwxX9b7FSlWg1L6/XFxB2d5k
-# o8DI2A8FyNKOoTLeAFlIMLyhggKiMIICngYJKoZIhvcNAQkGMYICjzCCAosCAQEw
+# gAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwLwYJKoZIhvcNAQkEMSIEIFoS
+# Cr8NV5pysB63RNV3S8RpwD8I+SJWJ2tbsy4Kl3mPMA0GCSqGSIb3DQEBAQUABIIB
+# ABeH+srXUETEpVt9D+mCMuqngNrC3SHWzCH9wNHbs9TqUelKsjWN8vqgMcPIfATH
+# CJyhrc/4T76ap52WuSWIeDVT+5OvI2mkXdxmjKDLwhGBKHf6TLEtDVTxIPCcra6W
+# txIztuBoh4wgE2d8FgpPa5FCx1CYpUKziMuXidbw9m8TAEIIhD4I+XBfLS4IY6Nf
+# rxk594tUP670PylOeb+bWZGZouFX88wSi+kXpb+jDK7pVUx5LyQ5hGaI4RQUvGt+
+# LOWj58xo2R3Z2e3nYeLt1UnPL7xJyRgxnlQ9c7a32hwGeW8c901qUjJVFp+3bB0t
+# 6ZbMrTNcUwfbZ40ZL+UilOmhggKiMIICngYJKoZIhvcNAQkGMYICjzCCAosCAQEw
 # aDBSMQswCQYDVQQGEwJCRTEZMBcGA1UEChMQR2xvYmFsU2lnbiBudi1zYTEoMCYG
 # A1UEAxMfR2xvYmFsU2lnbiBUaW1lc3RhbXBpbmcgQ0EgLSBHMgISESHWmadklz7x
 # +EJ+6RnMU0EUMAkGBSsOAwIaBQCggf0wGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEH
-# ATAcBgkqhkiG9w0BCQUxDxcNMTcwNjAxMjIwNDI4WjAjBgkqhkiG9w0BCQQxFgQU
-# J8gS6Y8gr3khN/OURa2epjdgdpwwgZ0GCyqGSIb3DQEJEAIMMYGNMIGKMIGHMIGE
+# ATAcBgkqhkiG9w0BCQUxDxcNMTcwNjAyMDI0NTAxWjAjBgkqhkiG9w0BCQQxFgQU
+# gtnx6E4K0jtqHFL9BtTooBPeY2owgZ0GCyqGSIb3DQEJEAIMMYGNMIGKMIGHMIGE
 # BBRjuC+rYfWDkJaVBQsAJJxQKTPseTBsMFakVDBSMQswCQYDVQQGEwJCRTEZMBcG
 # A1UEChMQR2xvYmFsU2lnbiBudi1zYTEoMCYGA1UEAxMfR2xvYmFsU2lnbiBUaW1l
 # c3RhbXBpbmcgQ0EgLSBHMgISESHWmadklz7x+EJ+6RnMU0EUMA0GCSqGSIb3DQEB
-# AQUABIIBAFZqbTeB7Min/tKjKMFkBexSfUqKeMIQejIRr8mbVZjIaaKbsEiqI8KY
-# wVq4DxCKqhDfCyU+o2IxCYQq2guEoRLWTRunAmJT02gvWCE0V8zk+AZ0CcbA+iPx
-# ov+P/bGVnldWqvsW4U9IpeqeKRUIbg9OJA7oRtxFGcDXrfa8Nvab2QZ7FaEVxCA/
-# Ykai7kz5rbnIsBWBWS4pKAPAKR9a/fWZFJdEG61A6kum0tgvF8xJdzYUidrPqnx4
-# AfzYcGXXrLvDgi8kRsZcjgHn0zcyiC+t5FRkmpFHYT4AMnYHBv4ksaGJNjOxizCT
-# yN1U7IQIG3VuKkBKzoGV2BNfD6Q2nXQ=
+# AQUABIIBAKmPZDV1qpNZ5dXgTYtpWAjWHO1Pn1mhuWEIuGrYxsTd3jDRc91ueFFR
+# l0W4iRrDqD63Cu7Zr6puMNnloXp+HUk1Te0yfcfVGQEbpC7dgdgk4dfpUGyDXr/m
+# wt4VesYWUL2dYs1JlppsDduQkWHdcwP/ZZsisL+Cq+leJotsGEemnUWAdu8r1hCb
+# QitqOaeDWzjGF7CLQPE/kGB0FfpN2QaxPoNI7UjjYjiZC9wr8Sec4Quie1AybllR
+# HfVVkXGza8Jo6u6PKZ2oLdq4D4RT9Lxk63mhCmtwt69qVhJ4fQ4MGx2C+9FxRsYS
+# cR+PabhgNKmQjmALx93R5sBedwX0mfc=
 # SIG # End signature block
