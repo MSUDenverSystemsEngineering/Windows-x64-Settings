@@ -73,8 +73,6 @@ Param (
 	[Parameter(Mandatory=$false)]
 	[switch]$SetTaskbar = $false,
 	[Parameter(Mandatory=$false)]
-	[switch]$SetTaskbar = $false,
-	[Parameter(Mandatory=$false)]
 	[switch]$SetExecutionPolicy = $false
 )
 
