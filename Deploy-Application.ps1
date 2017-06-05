@@ -49,6 +49,8 @@ Param (
 	[Parameter(Mandatory=$false)]
 	[switch]$DisableUAC = $false,
 	[Parameter(Mandatory=$false)]
+	[switch]$EnableCodeSigningCertificate = $false,
+	[Parameter(Mandatory=$false)]
 	[switch]$DisableDisplayingPreviousUsernames = $false,
 	[Parameter(Mandatory=$false)]
 	[switch]$EnableInternetExplorerAcademicSettings = $false,
@@ -67,7 +69,11 @@ Param (
 	[Parameter(Mandatory=$false)]
 	[switch]$EnableLegacyDataRestore = $false,
 	[Parameter(Mandatory=$false)]
-	[switch]$EnablePowerSettings = $false
+	[switch]$EnablePowerSettings = $false,
+	[Parameter(Mandatory=$false)]
+	[switch]$SetTaskbar = $false,
+	[Parameter(Mandatory=$false)]
+	[switch]$SetExecutionPolicy = $false
 )
 
 Try {
@@ -80,13 +86,13 @@ Try {
 	## Variables: Application
 	[string]$appVendor = 'MSU Denver'
 	[string]$appName = 'Windows Settings'
-	[string]$appVersion = '2.0.0'
+	[string]$appVersion = '2.2.0'
 	[string]$appArch = 'x64'
 	[string]$appLang = 'EN'
 	[string]$appRevision = '01'
 	[string]$appScriptVersion = '1.0.0'
-	[string]$appScriptDate = '06/01/2017'
-	[string]$appScriptAuthor = 'Jordan Hamilton/Quan Tran'
+	[string]$appScriptDate = '06/05/2017'
+	[string]$appScriptAuthor = 'Jordan Hamilton/Michael Reuther/Quan Tran'
 	##*===============================================
 	## Variables: Install Titles (Only set here to override defaults set by the toolkit)
 	[string]$installName = ''
@@ -138,12 +144,13 @@ Try {
 
 		## <Perform Pre-Installation tasks here>
 			#  Verify that settings were specified on the command-line
-			If ((-not $DisableUAC) -and (-not $DisableDisplayingPreviousUsernames) -and (-not $DisableWindowsConsumerFeatures) -and (-not $EnableInternetExplorerAcademicSettings) -and (-not $EnableInternetExplorerFacultyStaffSettings) -and (-not $EnableLoginLegalNotice) -and (-not $EnableStartMenuLogoffButton) -and (-not $EnableSupportInformation) -and (-not $EnableVPN) -and (-not $EnableLegacyDataRestore) -and (-not $EnablePowerSettings)) {
-				Show-InstallationPrompt -Message 'No settings were specified' -ButtonRightText 'OK' -Icon 'Error'
-				Exit-Script -ExitCode 9
-			}
+			#If ((-not $DisableUAC) -and (-not $DisableDisplayingPreviousUsernames) -and (-not $DisableWindowsConsumerFeatures) -and (-not $EnableInternetExplorerAcademicSettings) -and (-not $EnableInternetExplorerFacultyStaffSettings) -and (-not $EnableLoginLegalNotice) -and (-not $EnableStartMenuLogoffButton) -and (-not $EnableSupportInformation) -and (-not $EnableVPN) -and (-not $EnableLegacyDataRestore) -and (-not $EnablePowerSettings) -and (-not $EnableCodeSigningCertificate) -and (-not $SetTaskbar)) {
+				#Show-InstallationPrompt -Message 'No settings were specified' -ButtonRightText 'OK' -Icon 'Error'
+				#Exit-Script -ExitCode 9
+			#}
 			## Enumerate allowed sites for Internet Explorer
 			$AllowedSites = @("*.ahec.edu","*.mathxl.com","*.pearsoncmg.com","*.kaltura.com","*.ecollege.com","*.msudenver.edu","*.myitlab.com","*.wimba.com","*.auraria.edu","*.accuplacer.org","*.college-assist.org","*.pearsonmylabandmastering.com","*.coursecompass.com","*.readingplus.com","*.blackboard.com","*.pearsoned.com")
+			## Define registry paths
 			$DisableDisplayingPreviousUsernamesKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
 			$DisableUACKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
 			$EnableLoginLegalNoticeKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
@@ -230,10 +237,10 @@ Try {
 			Write-Log -Message "Creating directory structure for data restoration" -Severity 1 -Source $deployAppScriptFriendlyName
 			New-Folder -Path "${envSystemDrive}\Data"
 			New-Folder -Path "${envSystemRoot}\MSUDenver"
-			Copy-File -Path "${dirFiles}\DataTransfer.cmd" -Destination "${envSystemRoot}\MSUDenver"
+			Copy-File -Path "${dirFiles}\DataRestore.cmd" -Destination "${envSystemRoot}\MSUDenver"
 			[scriptblock]$RunOnce = {
-				Write-Log -Message "Setting data transfer to run once on logon..." -Severity 1 -Source $deployAppScriptFriendlyName
-				Set-RegistryKey -Key "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -Name "DataRestore" -Value "${envSystemRoot}\MSUDenver\DataTransfer.cmd" -Type "String" -SID $UserProfile.SID
+				Write-Log -Message "Setting data Restore to run once on logon..." -Severity 1 -Source $deployAppScriptFriendlyName
+				Set-RegistryKey -Key "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -Name "DataRestore" -Value "${envSystemRoot}\MSUDenver\DataRestore.cmd" -Type "String" -SID $UserProfile.SID
 			}
 			Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $RunOnce
 		}
@@ -243,6 +250,21 @@ Try {
 			If ($exitCode.ExitCode -ne "0") {
 				$mainExitCode = $exitCode.ExitCode
 			}
+		}
+
+		If ($SetTaskbar) {
+			#Set local cache for files
+			Copy-File -Path "$dirFiles\PinItem\*" -Destination "$envWindir\MSUDenver\PinItem"
+			Set-ActiveSetup -StubExePath "cscript.exe" -Arguments "//B //Nologo $envWindir\MSUDenver\PinItem\PinItem.vbs /item:`"$envCommonStartMenuPrograms\Google Chrome.lnk`" /taskbar" -Description "Google Chrome" -Key "Add Chrome" -Version "1"
+			Set-ActiveSetup -StubExePath "cscript.exe" -Arguments "//B //Nologo $envWindir\MSUDenver\PinItem\PinItem.vbs /item:`"$envCommonStartMenuPrograms\Mozilla Firefox.lnk`" /taskbar" -Description "Mozilla Firefox" -Key "Add Firefox" -Version "1"
+			Set-ActiveSetup -StubExePath "cscript.exe" -Arguments "//B //Nologo $envWindir\MSUDenver\PinItem\PinItem.vbs /item:`"$envCommonStartMenuPrograms\Windows Media Player.lnk`" /unpin /taskbar" -Description "Windows Media Player" -Key "Remove WMP" -Version "1"
+		}
+
+		If ($SetExecutionPolicy) {
+			## Setting execution policy to RemoteSigned
+			Set-RegistryKey -Key "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PowerShell\1\ShellIds\Microsoft.PowerShell" -Name "ExecutionPolicy" -Value "RemoteSigned" -Type "String"
+			## Importing MSU Denver code signing certificate
+			Execute-Process -Path "$envSystem32Directory\certutil.exe" -Parameters "-addstore TrustedPublisher `"$dirFiles\MSUDCodeSigningCertificate.cer`"" -WindowStyle "Hidden"
 		}
 
 		##*===============================================
