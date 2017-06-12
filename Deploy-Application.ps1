@@ -46,20 +46,39 @@ Param (
 	[switch]$TerminalServerMode = $false,
 	[Parameter(Mandatory=$false)]
 	[switch]$DisableLogging = $false,
+	[Parameter(Mandatory=$false)]
 	[switch]$DisableUAC = $false,
+	[Parameter(Mandatory=$false)]
+	[switch]$EnableCodeSigningCertificate = $false,
+	[Parameter(Mandatory=$false)]
 	[switch]$DisableDisplayingPreviousUsernames = $false,
+	[Parameter(Mandatory=$false)]
 	[switch]$EnableInternetExplorerAcademicSettings = $false,
+	[Parameter(Mandatory=$false)]
 	[switch]$EnableInternetExplorerFacultyStaffSettings = $false,
+	[Parameter(Mandatory=$false)]
 	[switch]$DisableWindowsConsumerFeatures = $false,
+	[Parameter(Mandatory=$false)]
 	[switch]$EnableLoginLegalNotice = $false,
+	[Parameter(Mandatory=$false)]
 	[switch]$EnableStartMenuLogoffButton = $false,
+	[Parameter(Mandatory=$false)]
 	[switch]$EnableVPN = $false,
-	[switch]$EnableSupportInformation = $false
+	[Parameter(Mandatory=$false)]
+	[switch]$EnableSupportInformation = $false,
+	[Parameter(Mandatory=$false)]
+	[switch]$EnableLegacyDataRestore = $false,
+	[Parameter(Mandatory=$false)]
+	[switch]$EnablePowerSettings = $false,
+	[Parameter(Mandatory=$false)]
+	[switch]$SetTaskbar = $false,
+	[Parameter(Mandatory=$false)]
+	[switch]$SetExecutionPolicy = $false
 )
 
 Try {
 	## Set the script execution policy for this process
-	Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force -ErrorAction 'Stop' } Catch {}
+	Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force -ErrorAction 'Stop' } Catch { Write-Error -Message "Unable to set the PowerShell Execution Policy to Bypass for this process." }
 
 	##*===============================================
 	##* VARIABLE DECLARATION
@@ -67,13 +86,13 @@ Try {
 	## Variables: Application
 	[string]$appVendor = 'MSU Denver'
 	[string]$appName = 'Windows Settings'
-	[string]$appVersion = '1.0.0'
+	[string]$appVersion = '2.2.0'
 	[string]$appArch = 'x64'
 	[string]$appLang = 'EN'
 	[string]$appRevision = '01'
 	[string]$appScriptVersion = '1.0.0'
-	[string]$appScriptDate = '03/15/2017'
-	[string]$appScriptAuthor = 'MSU Denver'
+	[string]$appScriptDate = '06/05/2017'
+	[string]$appScriptAuthor = 'Jordan Hamilton/Michael Reuther/Quan Tran'
 	##*===============================================
 	## Variables: Install Titles (Only set here to override defaults set by the toolkit)
 	[string]$installName = ''
@@ -125,12 +144,18 @@ Try {
 
 		## <Perform Pre-Installation tasks here>
 			#  Verify that settings were specified on the command-line
-			If ((-not $DisableUAC) -and (-not $DisableDisplayingPreviousUsernames) -and (-not $DisableWindowsConsumerFeatures) -and (-not $EnableInternetExplorerAcademicSettings) -and (-not $EnableInternetExplorerFacultyStaffSettings) -and (-not $EnableLoginLegalNotice) -and (-not $EnableStartMenuLogoffButton) -and (-not $EnableSupportInformation) -and (-not $EnableVPN)) {
-				Show-InstallationPrompt -Message 'No settings were specified' -ButtonRightText 'OK' -Icon 'Error'
-				Exit-Script -ExitCode 9
-			}
+			#If ((-not $DisableUAC) -and (-not $DisableDisplayingPreviousUsernames) -and (-not $DisableWindowsConsumerFeatures) -and (-not $EnableInternetExplorerAcademicSettings) -and (-not $EnableInternetExplorerFacultyStaffSettings) -and (-not $EnableLoginLegalNotice) -and (-not $EnableStartMenuLogoffButton) -and (-not $EnableSupportInformation) -and (-not $EnableVPN) -and (-not $EnableLegacyDataRestore) -and (-not $EnablePowerSettings) -and (-not $EnableCodeSigningCertificate) -and (-not $SetTaskbar)) {
+				#Show-InstallationPrompt -Message 'No settings were specified' -ButtonRightText 'OK' -Icon 'Error'
+				#Exit-Script -ExitCode 9
+			#}
 			## Enumerate allowed sites for Internet Explorer
 			$AllowedSites = @("*.ahec.edu","*.mathxl.com","*.pearsoncmg.com","*.kaltura.com","*.ecollege.com","*.msudenver.edu","*.myitlab.com","*.wimba.com","*.auraria.edu","*.accuplacer.org","*.college-assist.org","*.pearsonmylabandmastering.com","*.coursecompass.com","*.readingplus.com","*.blackboard.com","*.pearsoned.com")
+			## Define registry paths
+			$DisableDisplayingPreviousUsernamesKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+			$DisableUACKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+			$EnableLoginLegalNoticeKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+			$EnableStartMenuLogoffButtonKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer"
+			$EnableSupportInformationKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation"
 
 		##*===============================================
 		##* INSTALLATION
@@ -145,12 +170,10 @@ Try {
 
 		## <Perform Installation tasks here>
 		If ($DisableUAC) {
-			$DisableUACKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
 			Set-RegistryKey -Key $DisableUACKey -Name "EnableLUA" -Value "0" -Type "DWord"
 			$mainExitCode = 3010
 		}
 		If ($DisableDisplayingPreviousUsernames) {
-			$DisableDisplayingPreviousUsernamesKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
 			Set-RegistryKey -Key $DisableDisplayingPreviousUsernamesKey -Name "dontdisplaylastusername" -Value "1" -Type "DWord"
 		}
 		If ($DisableWindowsConsumerFeatures) {
@@ -183,20 +206,17 @@ Try {
 			Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $HKCUFacultyStaffRegistrySettings
 		}
 		If ($EnableLoginLegalNotice) {
-			$EnableLoginLegalNoticeKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
 			Set-RegistryKey -Key $EnableLoginLegalNoticeKey -Name "legalnoticecaption" -Value "Metropolitan State University of Denver" -Type "String"
 			Set-RegistryKey -Key $EnableLoginLegalNoticeKey -Name "legalnoticetext" -Value "This workstation is managed by MSU Denver Information Technology Services. By successfully logging into Metropolitan State University of Denver's System, you are agreeing to both the letter and spirit of the MSU Denver Information Security Appropriate Use Policy. Access to this system is restricted to authorized users only. Unauthorized access to this system or misuse of its information may result in disciplinary action including termination of employee and/or student status. Such conduct may also violate criminal laws, which carry severe penalties and are vigorously prosecuted. Information Technology Services routinely monitors system logs and network activity." -Type "String"
 		}
 		If ($EnableStartMenuLogoffButton) {
-			$EnableStartMenuLogoffButtonKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer"
 			Set-RegistryKey -Key $EnableStartMenuLogoffButtonKey -Name "PowerButtonAction" -Value "1" -Type "DWord"
 		}
 		If ($EnableSupportInformation) {
-			$EnableSupportInformationKey = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation"
 			Copy-File -Path "$dirFiles\OEMLogo.bmp" -Destination "$envWinDir" -ContinueOnError $true
 			Set-RegistryKey -Key $EnableSupportInformationKey -Name "Logo" -Value "$envWinDir\OEMLogo.bmp" -Type "String"
 			Set-RegistryKey -Key $EnableSupportInformationKey -Name "Manufacturer" -Value "Metropolitan State University of Denver" -Type "String"
-			Set-RegistryKey -Key $EnableSupportInformationKey -Name "SupportHours" -Value "Monday - Friday, 8am - 5pm | Visit Admin 475 or West 241" -Type "String"
+			Set-RegistryKey -Key $EnableSupportInformationKey -Name "SupportHours" -Value "Monday - Friday, 8am - 5pm | Visit Admin 475 or West 243" -Type "String"
 			Set-RegistryKey -Key $EnableSupportInformationKey -Name "SupportURL" -Value "http://msudenver.edu/technology" -Type "String"
 			Set-RegistryKey -Key $EnableSupportInformationKey -Name "SupportPhone" -Value "303-352-7548 | 24/7 Phone Support" -Type "String"
 			Write-Log -Message "Adding Support Information for ${envOSName} (${envOSVersionMajor}.$envOSVersionMinor)" -Severity 1 -Source $deployAppScriptFriendlyName
@@ -210,7 +230,41 @@ Try {
 		}
 
 		If ($EnableVPN) {
-			Copy-File -Path "$dirFiles\rasphone.pbk" -Destination "C:\ProgramData\Microsoft\Network\Connections\Pbk"
+			Copy-File -Path "$dirFiles\rasphone.pbk" -Destination "$envProgramData\Microsoft\Network\Connections\Pbk"
+		}
+
+		If ($EnableLegacyDataRestore) {
+			Write-Log -Message "Creating directory structure for data restoration" -Severity 1 -Source $deployAppScriptFriendlyName
+			New-Folder -Path "${envSystemDrive}\Data"
+			New-Folder -Path "${envSystemRoot}\MSUDenver"
+			Copy-File -Path "${dirFiles}\DataRestore.cmd" -Destination "${envSystemRoot}\MSUDenver"
+			[scriptblock]$RunOnce = {
+				Write-Log -Message "Setting data Restore to run once on logon..." -Severity 1 -Source $deployAppScriptFriendlyName
+				Set-RegistryKey -Key "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -Name "DataRestore" -Value "${envSystemRoot}\MSUDenver\DataRestore.cmd" -Type "String" -SID $UserProfile.SID
+			}
+			Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $RunOnce
+		}
+
+		If ($EnablePowerSettings) {
+			$exitCode = Execute-Process -Path "$envSystem32Directory\powercfg.exe" -Parameters "/CHANGE standby-timeout-ac 0" -WindowStyle "Hidden" -PassThru
+			If ($exitCode.ExitCode -ne "0") {
+				$mainExitCode = $exitCode.ExitCode
+			}
+		}
+
+		If ($SetTaskbar) {
+			#Set local cache for files
+			Copy-File -Path "$dirFiles\PinItem\*" -Destination "$envWindir\MSUDenver\PinItem"
+			Set-ActiveSetup -StubExePath "$envWindir\system32\cscript.exe" -Arguments "//B //Nologo $envWindir\MSUDenver\PinItem\PinItem.vbs /item:`"$envCommonStartMenuPrograms\Google Chrome.lnk`" /taskbar" -Description "Google Chrome" -Key "Add Chrome" -Version "1"
+			Set-ActiveSetup -StubExePath "$envWindir\system32\cscript.exe" -Arguments "//B //Nologo $envWindir\MSUDenver\PinItem\PinItem.vbs /item:`"$envCommonStartMenuPrograms\Mozilla Firefox.lnk`" /taskbar" -Description "Mozilla Firefox" -Key "Add Firefox" -Version "1"
+			Set-ActiveSetup -StubExePath "$envWindir\system32\cscript.exe" -Arguments "//B //Nologo $envWindir\MSUDenver\PinItem\PinItem.vbs /item:`"$envCommonStartMenuPrograms\Windows Media Player.lnk`" /unpin /taskbar" -Description "Windows Media Player" -Key "Remove WMP" -Version "1"
+		}
+
+		If ($SetExecutionPolicy) {
+			## Setting execution policy to RemoteSigned
+			Set-RegistryKey -Key "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PowerShell\1\ShellIds\Microsoft.PowerShell" -Name "ExecutionPolicy" -Value "RemoteSigned" -Type "String"
+			## Importing MSU Denver code signing certificate
+			Execute-Process -Path "$envSystem32Directory\certutil.exe" -Parameters "-addstore TrustedPublisher `"$dirFiles\MSUDCodeSigningCertificate.cer`"" -WindowStyle "Hidden"
 		}
 
 		##*===============================================
@@ -278,8 +332,8 @@ Catch {
 # SIG # Begin signature block
 # MIIU4wYJKoZIhvcNAQcCoIIU1DCCFNACAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBnJaZtozEZwrpI
-# gjH+MHXTVR5gLAhsLtQquYDchJaxoaCCD4cwggQUMIIC/KADAgECAgsEAAAAAAEv
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCCB6a+iHjGAqw6d
+# 7N+V10u4n+Vy8/2QjReuZWbouyotZqCCD4cwggQUMIIC/KADAgECAgsEAAAAAAEv
 # TuFS1zANBgkqhkiG9w0BAQUFADBXMQswCQYDVQQGEwJCRTEZMBcGA1UEChMQR2xv
 # YmFsU2lnbiBudi1zYTEQMA4GA1UECxMHUm9vdCBDQTEbMBkGA1UEAxMSR2xvYmFs
 # U2lnbiBSb290IENBMB4XDTExMDQxMzEwMDAwMFoXDTI4MDEyODEyMDAwMFowUjEL
@@ -366,26 +420,26 @@ Catch {
 # FgNlZHUxGTAXBgoJkiaJk/IsZAEZFgltc3VkZW52ZXIxFTATBgoJkiaJk/IsZAEZ
 # FgV3aW5hZDEZMBcGA1UEAxMQd2luYWQtVk1XQ0EwMS1DQQITfwAAACITuo77mvOv
 # 9AABAAAAIjANBglghkgBZQMEAgEFAKBmMBgGCisGAQQBgjcCAQwxCjAIoAKAAKEC
-# gAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwLwYJKoZIhvcNAQkEMSIEIFiJ
-# OTe7gvH4moWoH2gAdhQTK57WljwQ1MS/XEMuT4MNMA0GCSqGSIb3DQEBAQUABIIB
-# AIElKlNkOzswvFZjP3xlL6h7Qe4QwztFMEWGL3oTfH1b8fSefOjCyuUvRBZGwDvp
-# GC7jo+BvXDo7Hk3BjAlSlEoTeRz7E8g8HLkQT8cHJmxOep1e/1f6diHg3XH+byLg
-# Qeyw6lmR/o1s0EA9UpwNc/dEPmKKg0Ep1+ec0hCJX2OobZS2DNkxn9xxurSrfYXf
-# TPKgLmsb3LW8LTo+LmStTbtF4es5HJRSMfFQX2THzw4QHgfrekLqsjex8cIgZ7GX
-# LPJKCheqCGn61Q4UwfnaTaCUOPKFCxT3I5J7PwIpht04NpTYFYPgaEdCj94bKSi0
-# epfTYk5t8kKwwD1xLLBChkKhggKiMIICngYJKoZIhvcNAQkGMYICjzCCAosCAQEw
+# gAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwLwYJKoZIhvcNAQkEMSIEIFW9
+# riA0DnwlrLAjY4IYNLlbDLyAlDhbDN+MwbX9Os9eMA0GCSqGSIb3DQEBAQUABIIB
+# AGUV5ODwBArFcukjzCkDxk66mqSmcQjzGksdqglxlgSzTlNvi9IiCOZV7JcNBnSX
+# FDfaTDsVtYZ6Xdz3cKiEzY+4TNUNC2V78YQdeyFKLMu4C21UTNEwafZKxGH91aOZ
+# YMxjQjTMw+AlhiDsovFJO6PMSP7fAL2g8D2gRcoqSYYbMPlwTVWnE3ARPgW6N3t4
+# kxOBuBbKoDhN5CG2ZKWwHG+rycId0dsxekjY7zH/8uVRIXSjC+5Zsoi493nZk0J8
+# EzKfOe1GZFpfYOHJGTYMIR4wlwLvGF98oUG28fAnIFFZljZBE/HpKR41V+mQXzUe
+# 1H4Euj9FF8V2tP17hmjTuYChggKiMIICngYJKoZIhvcNAQkGMYICjzCCAosCAQEw
 # aDBSMQswCQYDVQQGEwJCRTEZMBcGA1UEChMQR2xvYmFsU2lnbiBudi1zYTEoMCYG
 # A1UEAxMfR2xvYmFsU2lnbiBUaW1lc3RhbXBpbmcgQ0EgLSBHMgISESHWmadklz7x
 # +EJ+6RnMU0EUMAkGBSsOAwIaBQCggf0wGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEH
-# ATAcBgkqhkiG9w0BCQUxDxcNMTcwMzE3MTUwMDQ3WjAjBgkqhkiG9w0BCQQxFgQU
-# y+F1AOzTXK/Psm3AGp9NIKfXu6MwgZ0GCyqGSIb3DQEJEAIMMYGNMIGKMIGHMIGE
+# ATAcBgkqhkiG9w0BCQUxDxcNMTcwNjAyMDI1MjUzWjAjBgkqhkiG9w0BCQQxFgQU
+# xBzkhwi+zD81NVNYQ49s8S7lMOswgZ0GCyqGSIb3DQEJEAIMMYGNMIGKMIGHMIGE
 # BBRjuC+rYfWDkJaVBQsAJJxQKTPseTBsMFakVDBSMQswCQYDVQQGEwJCRTEZMBcG
 # A1UEChMQR2xvYmFsU2lnbiBudi1zYTEoMCYGA1UEAxMfR2xvYmFsU2lnbiBUaW1l
 # c3RhbXBpbmcgQ0EgLSBHMgISESHWmadklz7x+EJ+6RnMU0EUMA0GCSqGSIb3DQEB
-# AQUABIIBAIpHcMF4rBs5Z5bokzmVkjgY/N2nPwOZRAiMnuIf91tI4FPTIcj6xf8j
-# K5uQZYKbMPnKduT+MVKeixpthiluAk3sr10dyCrOa4FNM/vVG+8VyDkbkFwzDFGv
-# riTO2dZfC2a0jqUgctGd1jRe3/3Ohs0MhjLbAZ4esHtgbegrwd68nAlENhIYVWyV
-# yy4yT0PQnIayOFAdPg6TBmT1C/R2K9STAGE/PuLPax7+bWYHqWZF3BykRhX/hb5N
-# sBbgqM1zEszqqGtO7UgwxiSnL0/2OqBxA1Mm4hNCYRCGLOpxmluV9v8kVkXLrOpF
-# c7CpmkjnW2LMlN07z/6m5yrUfRSQl3k=
+# AQUABIIBAHnXmCCR0ZMBghPnPOTmylaVvfoXr5lpYcrCt9KuGiFecMrsRwjoShnr
+# xOvsvxxgk+5kAZE/U6PtoX5Bf1WzDSHKoxjGCCRPFxykzCaBbVcQY4IT2VKfC1zS
+# Wrkfvwdzcwc4bziTKnTd53crlAZeJK6ZnuETBJlJJa5lfJymvAdLl+Npzf+uUz9z
+# YT9T2xbXQ4dYwViX1MMfxmn9VjIyxCkzdZ3zWTmJwHVyH63k4hx947S0LjMAFayB
+# XfV+xqN9naQcDTkAp2LMpg/JwjR4dsnhzJAixU31oQyg7imb4SfYW6THvN1tyGai
+# sEhvZ0Zi71k2SBinq4Lzhnx5hMjzLm4=
 # SIG # End signature block
