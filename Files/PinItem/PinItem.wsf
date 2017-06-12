@@ -1,0 +1,202 @@
+<job id="PinItem">
+    <script language="VBScript" src="ZTIUtility.vbs"/>
+    <script language="VBScript" src="ZTI-SpecialFolderLib.vbs"/>
+    <script language="VBScript">
+    
+'*=======================================================================================
+'*
+'* Disclaimer
+'*
+'* This script is not supported under any Microsoft standard support program or service. This 
+'* script is provided AS IS without warranty of any kind. Microsoft further disclaims all 
+'* implied warranties including, without limitation, any implied warranties of merchantability 
+'* or of fitness for a particular purpose. The entire risk arising out of the use or performance 
+'* of this script remains with you. In no event shall Microsoft, its authors, or anyone else 
+'* involved in the creation, production, or delivery of this script be liable for any damages 
+'* whatsoever (including, without limitation, damages for loss of business profits, business 
+'* interruption, loss of business information, or other pecuniary loss) arising out of the use 
+'* of or inability to use this script, even if Microsoft has been advised of the possibility 
+'* of such damages.
+'*
+'*=======================================================================================
+' //***************************************************************************
+' // ***** Script Header *****
+' //
+' // Solution:  Solution Accelerator - Microsoft Deployment Toolkit
+' // File:      PinItem.wsf
+' //
+' // Purpose:   Template for MDT scripts.
+' //
+' // Usage:     cscript PinItem.vbs /item:<path to .lnk/.url/.exe file>
+' //                    [/taskbar] [/?]
+' //
+' // Customer Build Version:      1.0.3
+' // Customer Script Version:     1.0.3
+' //
+' // Customer History:
+' // 1.0.0 - 04/03/2008 - Created.
+' // 1.0.1 - 03/02/2009 - Used Replace in PinItem function to remove "&" 
+' //                      from verb.
+' // 1.0.2 - 03/04/2009 - Script name was PinToStartMenu.vbs.  Added 
+' //                      /taskbar switch to pin items to taskbar on
+' //                      Win7.
+' // 1.0.3 - 04/28/2009 - Script name was PinItem.vbs.  Rewritten as an
+' //                      MDT script.
+' //
+' // Customer History:
+' //
+' // ***** End Header *****
+' //***************************************************************************
+
+
+'//----------------------------------------------------------------------------
+'//
+'//  Global constant and variable declarations
+'//
+'//----------------------------------------------------------------------------
+
+'Option Explicit
+
+Dim iRetVal
+
+
+'//----------------------------------------------------------------------------
+'//  End declarations
+'//----------------------------------------------------------------------------
+
+
+'//----------------------------------------------------------------------------
+'//  Main routine
+'//----------------------------------------------------------------------------
+
+On Error Resume Next
+iRetVal = ZTIProcess
+ProcessResults iRetVal
+On Error Goto 0
+
+
+'//---------------------------------------------------------------------------
+'//
+'//  Function:    ZTIProcess()
+'//
+'//  Input:    None
+'// 
+'//  Return:    Success - 0
+'//        Failure - non-zero
+'//
+'//  Purpose:    Perform main ZTI processing
+'//        
+'//---------------------------------------------------------------------------
+Function ZTIProcess()
+
+    oLogging.CreateEntry "------------ Initialization " & oUtility.ScriptName & " -------------", LogTypeInfo
+
+    ZTIProcess = Success
+    
+    sScriptFolder = oUtility.ScriptDir
+
+
+    If WScript.Arguments.Named.Exists("item") Then
+        sItemPath = WScript.Arguments.Named.Item("item")
+        oLogging.CreateEntry "The /item switch specified with value: " & sItemPath, LogTypeInfo
+    Else
+        oLogging.CreateEntry "The /item switch was not specified. Exiting Script.", LogTypeError
+        ZTIProcess = Failure
+        Exit Function
+    End If
+
+    If WScript.Arguments.Named.Exists("taskbar") Then
+        bTaskbar = True
+        oLogging.CreateEntry "The /taskbar switch was specified.", LogTypeInfo
+    End If
+
+    SetSpecialFolderEnvVars
+    sItemPath = oShell.ExpandEnvironmentStrings(sItemPath)
+
+    iPinItemReturn = PinItem(sItemPath, bTaskbar)
+    
+    ZTIProcess = iPinItemReturn
+
+    oLogging.CreateEntry "------------ Departing " & oUtility.ScriptName & " -------------", LogTypeInfo
+    
+End Function
+
+
+'//*******************************************************************
+'//
+'// Function PinItem()
+'//
+'// Purpose:  Pin item to the Start Menu or Taskbar.
+'//
+'// Input:          strlPath          Path of item to pin
+'//                 blnTaskbar        Pin item to Taskbar instead of Start Menu if true
+'//
+'// Dependencies:   oFSO            File System object
+'//
+'// Returns:        Success if the shortcut is created, else Failure
+'//
+'//*******************************************************************
+Function PinItem(strlPath, blnTaskbar)
+
+    On Error Resume Next
+
+    Dim colVerbs
+    Dim itemverb
+    
+    Dim objFolder
+    Dim objFolderItem
+
+    Dim strFolder
+    Dim strFile
+
+    Set objShellScripting = CreateObject("Shell.Application")
+    
+    If Not oFSO.FileExists(strlPath) Then
+        oLogging.CreateEntry "Item """ & strlPath & """ does not exist.  Exiting Script.", LogTypeError
+        PinItem = Failure
+        Exit Function
+    End If
+
+    strFolder = oFSO.GetParentFolderName(strlPath)
+    strFile = oFSO.GetFileName(strlPath)
+
+    'WScript.Echo "Folder: " & strFolder
+    'WScript.Echo "File: " & strFile
+
+    Err.Clear
+    Set objFolder = objShellScripting.Namespace(strFolder)
+    Set objFolderItem = objFolder.ParseName(strFile)
+
+    ' ***** InvokeVerb for this does not work on Vista/WS2008
+    'objFolderItem.InvokeVerb("P&in to Start Menu")
+
+    ' ***** This code works on Vista/WS2008
+    Set colVerbs = objFolderItem.Verbs
+
+    If blnTaskbar Then
+        For each itemverb in objFolderItem.verbs
+            If Replace(itemverb.name, "&", "") = "Pin to Taskbar" Then itemverb.DoIt
+        Next 
+    Else
+        For each itemverb in objFolderItem.verbs
+            If Replace(itemverb.name, "&", "") = "Pin to Start Menu" Then itemverb.DoIt
+        Next 
+    End If
+
+
+    If Err.Number = 0 Then
+        oLogging.CreateEntry "Item """ & strlPath & """ pinned successfully", LogTypeInfo
+        PinItem = Success
+    Else
+        oLogging.CreateEntry "Error 0x" & CStr(Hex(Err.Number)) & " pinning item """ & strlPath & """", LogTypeInfo
+        If Err.Description <> "" Then
+            oLogging.CreateEntry "Error description: " & Err.Description & ".", LogTypeInfo
+        End If
+        PinItem = Failure
+    End If
+
+End Function
+
+
+    </script>
+</job>
