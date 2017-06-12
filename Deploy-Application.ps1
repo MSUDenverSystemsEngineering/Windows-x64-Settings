@@ -255,15 +255,9 @@ Try {
 		If ($SetTaskbar) {
 			#Set local cache for files
 			Copy-File -Path "$dirFiles\PinItem\*" -Destination "$envWindir\MSUDenver\PinItem"
-<<<<<<< HEAD
 			Set-ActiveSetup -StubExePath "$envWindir\system32\cscript.exe" -Arguments "//B //Nologo $envWindir\MSUDenver\PinItem\PinItem.vbs /item:`"$envCommonStartMenuPrograms\Google Chrome.lnk`" /taskbar" -Description "Google Chrome" -Key "Add Chrome" -Version "1"
 			Set-ActiveSetup -StubExePath "$envWindir\system32\cscript.exe" -Arguments "//B //Nologo $envWindir\MSUDenver\PinItem\PinItem.vbs /item:`"$envCommonStartMenuPrograms\Mozilla Firefox.lnk`" /taskbar" -Description "Mozilla Firefox" -Key "Add Firefox" -Version "1"
 			Set-ActiveSetup -StubExePath "$envWindir\system32\cscript.exe" -Arguments "//B //Nologo $envWindir\MSUDenver\PinItem\PinItem.vbs /item:`"$envCommonStartMenuPrograms\Windows Media Player.lnk`" /unpin /taskbar" -Description "Windows Media Player" -Key "Remove WMP" -Version "1"
-=======
-			Set-ActiveSetup -StubExePath "cscript.exe" -Arguments "//B //Nologo $envWindir\MSUDenver\PinItem\PinItem.vbs /item:`"$envCommonStartMenuPrograms\Google Chrome.lnk`" /taskbar" -Description "Google Chrome" -Key "Add Chrome" -Version "1"
-			Set-ActiveSetup -StubExePath "cscript.exe" -Arguments "//B //Nologo $envWindir\MSUDenver\PinItem\PinItem.vbs /item:`"$envCommonStartMenuPrograms\Mozilla Firefox.lnk`" /taskbar" -Description "Mozilla Firefox" -Key "Add Firefox" -Version "1"
-			Set-ActiveSetup -StubExePath "cscript.exe" -Arguments "//B //Nologo $envWindir\MSUDenver\PinItem\PinItem.vbs /item:`"$envCommonStartMenuPrograms\Windows Media Player.lnk`" /unpin /taskbar" -Description "Windows Media Player" -Key "Remove WMP" -Version "1"
->>>>>>> origin/master
 		}
 
 		If ($SetExecutionPolicy) {
